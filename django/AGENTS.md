@@ -16,18 +16,12 @@
 - Follow the standard Django layout: `models/`, `views/`, `urls/`,
   `serializers/`, `services/`, `tests/`.
 - `selectors.py` → all read queries (no writes, no side effects)
-- `selectors.py` → all read queries (no writes, no side effects)
 - `services.py` → writes, business logic, orchestration
-- Views only call selectors and services — no ORM in views directly
-- Fat models, thin views — business logic lives in `services/` or
-  model methods, not in views or serializers.
+- Views only call selectors and services — no ORM in views directly.
 - Use class-based views (CBV) for CRUD; function-based views (FBV)
   only for one-off endpoints that don't fit CBV patterns.
 - URL names must be namespaced: `app_name` in every `urls.py`.
   Reference them with `reverse("app:name")`, never hardcode paths.
-- Never commit secrets — use `django-environ` or `python-decouple`.
-- Custom managers go in `managers.py`, not inside the model file,
-  if they exceed ~20 lines or are reused across models.
 
 ## Models
 
@@ -67,19 +61,15 @@
   non-obvious.
 - Defer heavy computation to Celery tasks. Views must respond in <200 ms
   under normal load.
-- Cache with `django.core.cache` behind a named alias
-  (`"default"`, `"sessions"`). Cache keys must include a version
-  prefix to allow easy invalidation.
-- Backend: Redis via `django-redis`. Configure in `settings.py`
-  with `CACHE_TTL` as a named constant. Never hardcode TTL values
-  inline.
+- Cache with `django.core.cache` behind a named alias (`"default"`,
+  `"sessions"`). Backend: Redis via `django-redis`. Use `CACHE_TTL`
+  as a named constant — never hardcode TTL values inline. Cache keys
+  must include a version prefix to allow easy invalidation.
 - Use database indexes on every field that appears in a `filter()`,
   `order_by()`, or `get()` in a hot path. Add via `Meta.indexes`.
-- No queries inside loops.
-- No queries in templates.
-- Prefer `bulk_create` and `update()` over per-row saves.
-- Prefer annotations over post-processing in Python.
-- Use `values()` or `only()` when the full model object isn't needed.
+- Avoid queries in loops or templates. Prefer `bulk_create`, `update()`,
+  annotations, and `values()`/`only()` over per-row or Python-side
+  processing.
 
 ## Comments
 
@@ -88,12 +78,11 @@
 - Write WHY, not WHAT. Skip `# increment counter` above `i += 1`.
 - Docstrings on public functions and service methods: intent + one
   usage example.
-- Reference issue numbers or commit SHAs when a line exists because
-  of a specific bug or upstream constraint.
 
 ## Tests
 
-- Run all tests with: `venv/bin/python manage.py test` or `pytest --ds=config.settings.test`.
+- Run all tests with: `venv/bin/python manage.py test` or
+  `pytest --ds=config.settings.test`.
 - Every new function and service method gets a unit test.
   Bug fixes get a regression test.
 - Use `TestCase` for DB-touching tests, `SimpleTestCase` for pure logic.
@@ -110,14 +99,6 @@
   constructors, not via global imports or module-level singletons.
 - Wrap third-party libs (`boto3`, `stripe`, `requests`) behind a thin
   interface owned by this project (e.g. `services/storage.py`).
-  This makes mocking and swapping trivial.
-- Pin all dependencies in `requirements.txt`
-
-## Structure
-
-- Prefer small, focused apps over a monolithic `core/`.
-- Each app owns its `urls.py` and is included via `include()` in
-  `config/urls.py`.
 
 ## Formatting
 
